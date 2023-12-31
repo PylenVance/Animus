@@ -7,7 +7,7 @@ local TRIGGER_HASH = 0x615762F1
 local maxSnackAmount = 6969
 local MobileRadio = false
 local SnowyWorld = false
-local AnimusVers = "V1.4"
+local AnimusVers = "V1.5"
 PiD = stats.get_int("MPPLY_LAST_MP_CHAR") mpx = PiD if PiD == 0 then mpx = "MP0_" else mpx = "MP1_" end 
 
 local IsMale 
@@ -33,43 +33,19 @@ end
 
 --Changelog:
     --Features:
-        -- Added Give 50M Money feature
-        -- Added Disable Remote Send to job
-        -- Added Increase Cash warehouse capacity
-        -- Added Increase Forged documents capacity
-        -- Added Increase Cocaine warehouse capacity
-        -- Added Increase Meth warehouse capacity
-        -- Added Remove CEO money clutter for office
-        -- Added see reports menu    
-        -- Added ghost orginisation feature
-        -- Added Bribe authorities feature 
-        -- Added remove insurance claims feature
-        -- Added heal vehicle feature
-        -- Added Police ignore feature  
-        -- Added Level vehicle feature
-        -- Added Set wanted lvl feature      
-        -- Added 2 more TP locations menu   
-        -- Added Assisted aim Feature 
-        -- Added No spread feature    
-        -- Added Set aim fov feature 
-        -- Added Inf ammo feature 
-        -- Added Bring peds feature 
-        -- Added Bring vehicles feature
-        -- Added Remove vehicles feature
-        -- Added car fuck player feature
-        -- Added ped fuck player feature
-        -- Added Tank Trolls feature
-        -- Added kill players vehicle feature
-        -- Added No ragdoll feature 
-        -- Added Online players tab 
-        -- Added Unlock Gooch outfit
-        -- Added vehicle damage multiplier
-        -- Added Vehicle Instant brake
-        -- Added Infinite bullet range
-        -- Added Protection Menu
-        -- Set max Teleport Stud to 100 instead of 25
-        -- Optimized teleports
-        -- Optimized Vehicle options
+        -- Added Unlock weapons feature
+        -- Added Unlock contacts feature
+        -- Added Block Infinite loading screen Feature
+        -- Added Ceo Kick Protection feature
+        -- Added Kick Protection feature
+        -- Added Teleport To Objective feature
+        -- Added Seatbelt feature
+        -- Added Tp to player feature
+        -- Added Complete daily objectives
+        -- Added Repair vehicle
+        -- Added explode player feature
+        -- Fixed Car fuck feature
+        -- Fixed block transaction errors
         
 
         
@@ -897,6 +873,43 @@ local function createStoreMoneyEditor(submenu, character, statName)
             stats.set_int(statName, cash)
         end)
 end
+
+
+function CompleteDailyObjectives()
+    local function setStats(prefix, value)
+        stats.set_int(MPx() .. prefix, value)
+    end
+    
+    local function setBoolStats(prefix, value)
+        stats.set_bool(MPx() .. prefix, value)
+    end
+    setStats("COMPLETEDAILYOBJ", 100)
+    setStats("COMPLETEDAILYOBJTOTAL", 100)
+    setStats("TOTALDAYCOMPLETED", 100)
+    setStats("TOTALWEEKCOMPLETED", 400)
+    setStats("TOTALMONTHCOMPLETED", 1800)
+    setStats("CONSECUTIVEDAYCOMPLETED", 30)
+    setStats("CONSECUTIVEWEEKCOMPLETED", 4)
+    setStats("CONSECUTIVEMONTHCOMPLETE", 1)
+
+    setStats("COMPLETEDAILYOBJSA", 100)
+    setStats("COMPLETEDAILYOBJTOTALSA", 100)
+    setStats("TOTALDAYCOMPLETEDSA", 100)
+    setStats("TOTALWEEKCOMPLETEDSA", 400)
+    setStats("TOTALMONTHCOMPLETEDSA", 1800)
+    setStats("CONSECUTIVEDAYCOMPLETEDSA", 30)
+    setStats("CONSECUTIVEWEEKCOMPLETEDSA", 4)
+    setStats("CONSECUTIVEMONTHCOMPLETESA", 1)
+
+    setStats("AWD_DAILYOBJCOMPLETEDSA", 100)
+    setStats("AWD_DAILYOBJCOMPLETED", 100)
+
+    setBoolStats("AWD_DAILYOBJMONTHBONUS", true)
+    setBoolStats("AWD_DAILYOBJWEEKBONUS", true)
+    setBoolStats("AWD_DAILYOBJWEEKBONUSSA", true)
+    setBoolStats("AWD_DAILYOBJMONTHBONUSSA", true)
+end
+
 local function setBadsport(isBadsport)
 	stats.set_int("MPPLY_BADSPORT_MESSAGE", isBadsport and 1 or 0)
 	stats.set_int("MPPLY_BECAME_BADSPORT_NUM", isBadsport and 1 or 0)
@@ -1182,6 +1195,75 @@ local function add_player_option(submenu, ply_id, ply_name)
     end
     
 end
+local function CheckIsModder(ply)
+	if not IsPlayer(ply) then
+		return false
+	end
+
+	if ply:get_max_health() < 100 then
+		return true
+	end
+	if ply:is_in_vehicle() and ply:get_godmode() then
+		return true
+	end
+	if ply:get_run_speed() > 1.0 or ply:get_swim_speed() > 1.0 then
+		return true
+	end
+
+	return false
+end
+function CircleUserWithVehicleTroll(plr)
+    local currPos = plr:get_position()
+    local radius = 20
+    local numVehicles = 0
+    local currentVehicle = nil
+
+    if localplayer:is_in_vehicle() then
+        currentVehicle = localplayer:get_current_vehicle()
+    end
+
+    for _ in replayinterface.get_vehicles() do
+        numVehicles = numVehicles + 1
+    end
+
+    local angleStep = 2 * math.pi / numVehicles 
+
+    for veh in replayinterface.get_vehicles() do
+        if not currentVehicle or currentVehicle ~= veh then
+            local angle = angleStep * (numVehicles - 1)
+            local xOffset = radius * math.cos(angle)
+            local yOffset = radius * math.sin(angle)
+
+            veh:set_position(currPos.x + xOffset, currPos.y + yOffset, currPos.z)  
+
+            local facingAngle = math.deg(math.atan(yOffset / xOffset))
+
+            if xOffset < 0 then
+                facingAngle = facingAngle + 180
+            end
+
+            veh:set_rotation(vector3(0, 0, facingAngle))
+
+            numVehicles = numVehicles - 1
+        end
+    end
+end
+local function ExplodePlayerTroll(ply)
+    if not ply then
+        return
+    end
+
+    local pos = ply:get_position()
+    local currentVehicle = localplayer:is_in_vehicle() and localplayer:get_current_vehicle() or nil
+
+	for veh in replayinterface.get_vehicles() do
+        if not currentVehicle or currentVehicle ~= veh then
+            veh:set_rotation(vector3(0, 0, 180))
+            veh:set_health(-1)
+            veh:set_position(pos)
+        end
+    end
+end
 local function BringAllCarsTroll(x, y, z)
   
     for veh in replayinterface.get_vehicles() do
@@ -1206,7 +1288,9 @@ function BringCarsTroll(plr)
             currentvehicle = localplayer:get_current_vehicle()
         end
         for veh in replayinterface.get_vehicles() do
+            if veh ~= currentvehicle then
              veh:set_position(pos)
+            end
         end 
 end
 function KillVehicleTroll(plr)
@@ -1249,7 +1333,15 @@ function TankTroll(plr)
     globals.set_boolean(tankGB + 42, true)
 end
 
+function TpToPlayer(plr)
+    if not plr or plr == nil then
+        return
+    end
+    local pos = plr:get_position()
+    local currentvehicle = nil
+    TeleportTopos(pos.x, pos.y, pos.z)
 
+end
 
 local function CreatePlrList()
     PLAYERLISTPAGE:add_bare_item("Players: " .. PlayerCount(), function()
@@ -1267,6 +1359,7 @@ local function CreatePlrList()
     end
     CreateLabel(PLAYERLISTPAGE,"----------------------------------------------" )
 
+    local suboptions = PLAYERLISTPAGE:add_submenu("Player")
     local subtroll = PLAYERLISTPAGE:add_submenu("Trolling")
     local posplr = nil
     
@@ -1275,11 +1368,19 @@ local function CreatePlrList()
         action(selectedPlayerPed)
     end
     
+    suboptions:add_action("TP to player", function()
+        BringTroll(TpToPlayer)
+    end)
+    suboptions:add_action("Explode player", function()
+        BringTroll(ExplodePlayerTroll)
+    end)
     subtroll:add_action("Car fuck player", function()
         BringTroll(BringCarsTroll)
     end)
-
-    subtroll:add_action("ped fuck player", function()
+    subtroll:add_action("Circle player with cars", function()
+        BringTroll(CircleUserWithVehicleTroll)
+    end)
+    subtroll:add_action("Ped fuck player", function()
         BringTroll(BringPedsTroll)
     end)
     subtroll:add_action("Spawn tank on top of player", function()
@@ -1365,6 +1466,65 @@ local function setAimFOV(val)
         currweapon:set_aim_fov(val)
     end
 end
+local function SetKickCrashes(bool)
+	if bool then 
+		globals.set_bool(1669936, true)
+		globals.set_bool(1669663, true)
+		globals.set_bool(1669818, true)
+		globals.set_bool(1669833, true)
+		globals.set_bool(1669733, true)
+		globals.set_bool(1669810, true)
+		globals.set_bool(1670028, true)
+	else
+		globals.set_bool(1669936, false)
+		globals.set_bool(1669663, false)
+		globals.set_bool(1669818, false)
+		globals.set_bool(1669833, false)
+		globals.set_bool(1669733, false)
+		globals.set_bool(1669810, false)
+		globals.set_bool(1670028, false)
+	end
+end
+local function CeoKick(bool)
+	if bool then 
+		globals.set_bool(1669766, true) 
+	else
+		globals.set_bool(1669766, false)
+	end
+end
+local function InfiniteLoad(bool)
+	if bool then 		
+		globals.set_bool(1669729, true) 
+		globals.set_bool(1669858, true)
+	else
+		globals.set_bool(1669729, false)
+		globals.set_bool(1669858, false)
+	end
+end
+
+local CeoKickProtection = false
+local KickCrash = false
+local BlockedInfLoadScreen = false
+PROTECTIONSPAGE:add_toggle("Block Infinite loading screen", function()
+    return BlockedInfLoadScreen
+end, function(value)
+    BlockedInfLoadScreen = value
+    InfiniteLoad(BlockedInfLoadScreen)
+end)
+
+PROTECTIONSPAGE:add_toggle("Kick Protection", function()
+    return KickCrash
+end, function(value)
+    KickCrash = value
+    SetKickCrashes(KickCrash)
+end)
+PROTECTIONSPAGE:add_toggle("Ceo Kick Protection", function()
+    return CeoKickProtection
+end, function(value)
+    CeoKickProtection = value
+    CeoKick(CeoKickProtection)
+end)
+
 local RMTAPTStatus = false
 PROTECTIONSPAGE:add_toggle("Disable Remote teleport to apartment", function()
     return RMTAPTStatus
@@ -1728,7 +1888,8 @@ WORLDPAGE:add_action("Bring all peds", function()
     BringAllPeds()
 end)
 WORLDPAGE:add_action("Bring all vehicles", function()
-    BringAllCars()
+    local pp = localplayer:get_position()
+    BringAllCars(pp.x, pp.y, pp.z)
 end)
 WORLDPAGE:add_action("Remove all vehicles", function()
     RemoveAllCars()
@@ -2932,6 +3093,10 @@ TELEPORTPAGE:add_action("Save position", function()
         TeleportTopos(pos.x, pos.y, pos.z)
     end)
 end)
+TELEPORTPAGE:add_action("Teleport To Objective", function()
+    menu.teleport_to_objective()
+end)
+
 TELEPORTPAGE:add_action("Teleport Forwads", function()
     menu.teleport_forward()
 end)
@@ -2969,7 +3134,81 @@ for location, coords in pairs(ThirdPageLocations) do
     end)
 end
 
-
+local function UnlockContacts()
+    stats.set_int(MPx() .. "FM_ACT_PHN", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH2", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH3", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH4", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH5", -1)
+	stats.set_int(MPx() .. "FM_VEH_TX1", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH6", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH7", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH8", -1)
+	stats.set_int(MPx() .. "FM_ACT_PH9", -1)
+	stats.set_int(MPx() .. "FM_CUT_DONE", -1)
+	stats.set_int(MPx() .. "FM_CUT_DONE_2", -1)
+end
+function UnlockWeapons()
+    stats.set_int(MPx() .. "CHAR_WEAP_UNLOCKED", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_UNLOCKED2", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_UNLOCKED3", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_UNLOCKED4", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_ADDON_1_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_ADDON_2_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_ADDON_3_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_ADDON_4_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FREE", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FREE2", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_FREE", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_FREE2", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_FREE3", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_FREE4", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_PURCHASED", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_PURCHASED2", -1)
+	stats.set_int(MPx() .. "WEAPON_PICKUP_BITSET", -1)
+	stats.set_int(MPx() .. "WEAPON_PICKUP_BITSET2", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_UNLOCKED", -1)
+	stats.set_int(MPx() .. "NO_WEAPONS_UNLOCK", -1)
+	stats.set_int(MPx() .. "NO_WEAPON_MODS_UNLOCK", -1)
+	stats.set_int(MPx() .. "NO_WEAPON_CLR_MOD_UNLOCK", -1) 
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_UNLOCKED2", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_UNLOCKED3", -1)
+	stats.set_int(MPx() .. "CHAR_FM_WEAP_UNLOCKED4", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_1_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_2_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_3_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_4_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_5_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_6_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_7_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_8_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_9_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_10_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_11_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_12_FM_UNLCK", -1)
+	stats.set_int(MPx() .. "CHAR_KIT_FM_PURCHASE", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FM_PURCHASE", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FM_PURCHASE2", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FM_PURCHASE3", -1)
+	stats.set_int(MPx() .. "CHAR_WEAP_FM_PURCHASE4", -1)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_1_WHITE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_1_RED", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_1_BLUE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_2_WHITE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_2_RED", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_2_BLUE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_3_WHITE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_3_RED", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_3_BLUE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_4_WHITE", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_4_RED", 1000)
+	stats.set_int(MPx() .. "FIREWORK_TYPE_4_BLUE", 1000)
+	stats.set_int(MPx() .. "WEAP_FM_ADDON_PURCH", -1)
+   for i = 2, 19 do stats.set_int(MPX() .. "WEAP_FM_ADDON_PURCH"..i, -1) end
+   for j = 1, 19 do stats.set_int(MPX() .. "CHAR_FM_WEAP_ADDON_"..j.."_UNLCK", -1) end
+   for m = 1, 41 do stats.set_int(MPX() .. "CHAR_KIT_"..m.."_FM_UNLCK", -1) end
+   for l = 2, 41 do stats.set_int(MPX() .. "CHAR_KIT_FM_PURCHASE"..l, -1) end
+end
 local function unlockRecords(records)
     for _, record in ipairs(records) do
         stats.set_bool_masked(MPx() .. record.stat, true, record.index)
@@ -2982,8 +3221,15 @@ UNLOCKREC:add_action("Unlock ALL (MAY TAKE A MINUTE)", function()
 	unlockAllTattoos()
 	UnlockBennyVehicleOptions()
 	unlockFastRunReload()
+    UnlockContacts()
+    UnlockWeapons()
 end)
-
+UNLOCKREC:add_action("Unlock weapons", function()
+    UnlockWeapons()
+end)
+UNLOCKREC:add_action("Unlock contacts", function()
+    UnlockContacts()
+end)
 UNLOCKREC:add_action("Unlock Gooch outfit", function()
     stats.set_bool_masked(MPx() .. "DLC12022PSTAT_BOOL7", true, 62) 
     stats.set_bool_masked(MPx() .. "DLC12023PSTAT_BOOL11", true, 49)
@@ -3046,7 +3292,7 @@ local autoSessionHopOnRankChanged = false
 local function setRank(value)
     local calculatedValue = calculateValue(value)
     stats.set_int(mpx .. "CHAR_SET_RP_GIFT_ADMIN", calculatedValue + 100)
-    if autoSessionHopOnRankChanged then ServerHop() end
+    --if autoSessionHopOnRankChanged then ServerHop() end
 end
 
 RANKREC:add_bare_item("", function() return "[!] JOIN NEW SESSION TO APPLY RANK CHANGES" end, null, null, null)
@@ -3208,8 +3454,25 @@ PLAYERPAGE:add_toggle("Freeze Player movement", function()
 end, function(value)
 	localplayer:set_config_flag(292, value)
 end)
+local function RemoveTransaccError(bool) 
+	if bool then 
+		globals.set_bool(1669662, true)
+		globals.set_bool(1669233, true)
+		globals.set_bool(1669839, true)
+	else
+		globals.set_bool(1669662, false)
+		globals.set_bool(1669233, false)
+		globals.set_bool(1669839, false)
+	end
+end
+
 PLAYERPAGE:add_toggle("Mobile Radio", function() return MobileRadio end, function() MobileRadio = not MobileRadio menu.set_mobile_radio(MobileRadio) end)
-PLAYERPAGE:add_toggle("Remove transaction errors",function()return TRANSACCERRORBLOCK end,function(val)TRANSACCERRORBLOCK=val end)
+PLAYERPAGE:add_toggle("Remove transaction errors", function()
+	return TRANSACCERRORBLOCK
+end, function(val)
+	TRANSACCERRORBLOCK = val
+	RemoveTransaccError(TRANSACCERRORBLOCK)
+end)
 
 PLAYERPAGE:add_toggle("No ragdoll", function()
 	return NoRagDoll
@@ -3328,6 +3591,9 @@ end)
 PLAYERPAGE:add_action("Skip cutscene", function()
     menu.end_cutscene()
 end)
+PLAYERPAGE:add_action("Complete daily objectives", function()
+    CompleteDailyObjectives()
+end)
 
 
 PLAYERPAGE:add_action("Instant Ballistic armour",function()globals.set_int(2738587+902,1)end)
@@ -3416,6 +3682,24 @@ VEHICLESPAGE:add_toggle("Vehicle Instant brake",
     end
 )
 
+local function FetchVehicle()
+    if localplayer:is_in_vehicle() then
+        return localplayer:get_current_vehicle()
+    else
+        return false
+    end
+end
+local SeatbeltEnabled = false
+
+VEHICLESPAGE:add_toggle("Seatbelt",
+    function() return SeatbeltEnabled end,
+    function(val)
+        SeatbeltEnabled = val
+        local vehicle = FetchVehicle()
+        if vehicle then
+            localplayer:set_seatbelt(val)
+        end
+    end)
 
 VEHICLESPAGE:add_int_range("Damage multiplier", 1, 0, 10,
     function()
@@ -3427,13 +3711,6 @@ VEHICLESPAGE:add_int_range("Damage multiplier", 1, 0, 10,
 end)
 local VehAccelVal = 1
 
-local function FetchVehicle()
-    if localplayer:is_in_vehicle() then
-        return localplayer:get_current_vehicle()
-    else
-        return false
-    end
-end
 
 VEHICLESPAGE:add_int_range("Acceleration", 1, 1, 100, function()
     return VehAccelVal
@@ -3444,6 +3721,7 @@ end, function(val)
         vehicle:set_acceleration(val)
     end
 end)
+
 
 VEHICLESPAGE:add_action("Heal vehicle", function()
      local vehicle = FetchVehicle()
@@ -3457,6 +3735,13 @@ VEHICLESPAGE:add_action("Kill engine", function()
         vehicle:set_health(0)
     end
 end)
+VEHICLESPAGE:add_action("Repair vehicle", function()
+    local vehicle = FetchVehicle()
+    if vehicle then
+        menu.repair_online_vehicle()
+   end
+end)
+
 VEHICLESPAGE:add_action("Level vehicle", function()
     local vehicle = FetchVehicle()
     if vehicle then
