@@ -3,6 +3,7 @@ Animus GTA 5 Online script (V1.3.5)
 (build 3095)
 
 Note: THIS USED TO BE FEMBOYLAX, Renamed to animus
+Femboylax Repository: https://github.com/PylenVance/Femboylax
 
 --Changelog:
 + Features:
