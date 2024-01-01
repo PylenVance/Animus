@@ -6,18 +6,17 @@ Note: THIS USED TO BE FEMBOYLAX, Renamed to animus
 
 + Femboylax Repository: https://github.com/PylenVance/Femboylax
 
---Changelog:
-+ Features:
-    + Added Unlock weapons feature
-    + Added Unlock contacts feature
-    + Added Block Infinite loading screen Feature
-    + Added Ceo Kick Protection feature
-    + Added Kick Protection feature
-    + Added Teleport To Objective feature
-    + Added Seatbelt feature
-    + Added Tp to player feature
-    + Added Complete daily objectives
-    + Added Repair vehicle
-    + Added explode player feature
-    + Fixed Car fuck feature
-    + Fixed block transaction errors
++ Changelog:
++    Features:
++        Added Vehicle Set Window tint feature
++        Added Vehicle bulletproof tires feature
++        Added Vehicle Remove max speed feature
++        Added Vehicle drift tires feature
++        Added Vehicle locked feature
++        Added Vehicle Dirt level feature
++        Added registered weapon for clarity
++        Added changelog page for clarity
++        Added kill nearby vehicles feature
++        Added refill armor feature
++        Fixed 50M timing issue
++        Optimized Skip Cutscene feature
