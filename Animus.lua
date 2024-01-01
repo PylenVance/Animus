@@ -7,7 +7,7 @@ local TRIGGER_HASH = 0x615762F1
 local maxSnackAmount = 6969
 local MobileRadio = false
 local SnowyWorld = false
-local AnimusVers = "V1.5"
+local AnimusVers = "V1.5.5"
 PiD = stats.get_int("MPPLY_LAST_MP_CHAR") mpx = PiD if PiD == 0 then mpx = "MP0_" else mpx = "MP1_" end 
 
 local IsMale 
@@ -33,20 +33,18 @@ end
 
 --Changelog:
     --Features:
-        -- Added Unlock weapons feature
-        -- Added Unlock contacts feature
-        -- Added Block Infinite loading screen Feature
-        -- Added Ceo Kick Protection feature
-        -- Added Kick Protection feature
-        -- Added Teleport To Objective feature
-        -- Added Seatbelt feature
-        -- Added Tp to player feature
-        -- Added Complete daily objectives
-        -- Added Repair vehicle
-        -- Added explode player feature
-        -- Fixed Car fuck feature
-        -- Fixed block transaction errors
-        
+        -- Added Vehicle Set Window tint feature
+        -- Added Vehicle bulletproof tires feature
+        -- Added Vehicle Remove max speed feature
+        -- Added Vehicle drift tires feature
+        -- Added Vehicle locked feature
+        -- Added Vehicle Dirt level feature
+        -- Added registered weapon for clarity
+        -- Added changelog page for clarity
+        -- Added kill nearby vehicels feature
+        -- Added refill armour feature
+        -- Fixed 50M timing issue
+        -- Optimized Skip Cutscene feature
 
         
 --Car spawner by SCAAPPS
@@ -1122,6 +1120,7 @@ CreateLabel(MAIN,"                Game version: " .. "3095" )
 CreateLabel(MAIN,"                Current rank: "..globals.get_int(1845263+1+(PlayerID()*877)+205+6) )
 CreateLabel(MAIN,"----------------------------------------------" )
 local PLAYERPAGE = MAIN:add_submenu("Player")
+
 local WEAPONPAGE = MAIN:add_submenu("Weapon")
 local TELEPORTPAGE = MAIN:add_submenu("Teleports")
 local REPORTSPAGE = MAIN:add_submenu("See Reports")
@@ -1398,6 +1397,29 @@ end
 PLAYERLISTPAGE = MAIN:add_submenu("Online Players", UpdatePlrList)
 CreateLabel(MAIN,"----------------------------------------------" )
 local CREDITSPAGE = MAIN:add_submenu("                          Credits")
+local CHANGELOGPAGE = MAIN:add_submenu("Latest changelog")
+
+local Changelogtxt = {
+    "Added Unlock weapons feature",
+    "Added Unlock contacts feature",
+    "Added Block Infinite loading screen Feature",
+    "Added Ceo Kick Protection feature",
+    "Added Kick Protection feature",
+    "Added Teleport To Objective feature",
+    "Added Seatbelt feature",
+    "Added Tp to player feature",
+    "Added Complete daily objectives",
+    "Added Repair vehicle",
+    "Added explode player feature",
+    "Fixed Car fuck feature",
+    "Fixed block transaction errors"
+}
+
+for _, changelogEntry in ipairs(Changelogtxt) do
+    CHANGELOGPAGE:add_bare_item("", function() return changelogEntry end, null, null, null)
+end
+
+
 CREDITSPAGE:add_bare_item("", function() return "		CREDITS" end, null, null, null)
 CREDITSPAGE:add_bare_item("", function() return "------------------------" end, null, null, null)
 CREDITSPAGE:add_bare_item("", function() return "Silent day: Informing me with a few globals" end, null, null, null)
@@ -1862,6 +1884,17 @@ local function SetPedsFrozen(val)
         v:set_freeze_momentum(val)
     end
 end
+function KillNearbyVehicles()
+    currveh = nil
+    if localplayer:is_in_vehicle() then
+        currveh = localplayer:get_current_vehicle()
+    end
+	for veh in replayinterface.get_vehicles() do
+        if veh ~= currveh then
+		    veh:set_health(-1)
+        end
+	end
+end
 
 WORLDPAGE:add_toggle("Snow world", function() 
     return globals.get_boolean(262145 + 4575) 
@@ -1880,6 +1913,9 @@ WORLDPAGE:add_toggle("Loop Rain vehicles", function()
 end, function(value)
     RainVehicles = value
 	while RainVehicles == true do sleep(0.5) RainVehiclesLogic() end 
+end)
+WORLDPAGE:add_action("Kill nearby vehicles", function()
+    KillNearbyVehicles()
 end)
 WORLDPAGE:add_action("Flip All vehicles", function()
     RotateCars()
@@ -2947,9 +2983,13 @@ end
 
 function AddFiftyMil()
     TriggerTransaction(0x176D9D54, 15e6)
+    sleep(0.5)
     TriggerTransaction(0xA174F633, 15e6)
+    sleep(0.5)
     TriggerTransaction(0x3EBB7442, 15e6)
+    sleep(0.5)
     TriggerTransaction(0x46521174, 2550000)
+    sleep(0.5)
     TriggerTransaction(0xDBF39508, 2550000)
 end
 
@@ -3575,6 +3615,9 @@ end)
 PLAYERPAGE:add_action("Heal", function()
     menu.heal_player()
 end)
+PLAYERPAGE:add_action("Refill armour", function()
+    localplayer:set_armour(100)
+end)
 PLAYERPAGE:add_action("Suicide", function()
     menu.suicide_player()
 end)
@@ -3589,7 +3632,11 @@ PLAYERPAGE:add_action("Remove insurance claims", function()
     menu.remove_insurance_claims()
 end)
 PLAYERPAGE:add_action("Skip cutscene", function()
-    menu.end_cutscene()
+    if localplayer:is_in_cutscene() then
+        menu.end_cutscene()
+    else
+        return 
+    end
 end)
 PLAYERPAGE:add_action("Complete daily objectives", function()
     CompleteDailyObjectives()
@@ -3639,10 +3686,18 @@ end)
 
 
 function MakeCarsFLY()
+    currveh = nil
+    if localplayer:is_in_vehicle() then
+        currveh = localplayer:get_current_vehicle()
+    end
 	for veh in replayinterface.get_vehicles() do
-		veh:set_gravity(-5)
+        if veh ~= currveh then
+		    veh:set_gravity(-5)
+        end
 	end
 end
+
+
 local VehGodmode = false
 VEHICLESPAGE:add_toggle("Vehicle Godmode",
     function() return VehGodmode end,
@@ -3653,6 +3708,81 @@ VEHICLESPAGE:add_toggle("Vehicle Godmode",
 		currentvehicle = localplayer:get_current_vehicle()
         currentvehicle:set_godmode(VehGodmode)
 
+	end
+end)
+local VehBulletproofTires = false
+VEHICLESPAGE:add_toggle("Vehicle bulletproof tires",
+    function() return VehBulletproofTires end,
+    function(val)
+        VehBulletproofTires = val
+        local currentvehicle = nil
+	if localplayer:is_in_vehicle() then
+		currentvehicle = localplayer:get_current_vehicle()
+        currentvehicle:set_bulletproof_tires(VehBulletproofTires)
+
+	end
+end)
+local VehInfMaxSpeed = false
+local oldvehspeed = nil
+VEHICLESPAGE:add_toggle("Vehicle Remove max speed",
+    function() return VehInfMaxSpeed end,
+    function(val)
+        VehInfMaxSpeed = val
+        local currentvehicle = localplayer:is_in_vehicle() and localplayer:get_current_vehicle()
+
+        if currentvehicle then
+            oldvehspeed = oldvehspeed or currentvehicle:get_max_speed()
+        if val then
+            currentvehicle:set_max_speed(9999)
+        else
+            currentvehicle:set_max_speed(oldvehspeed)
+        end
+    end
+end)
+
+local VehLocked = false
+VEHICLESPAGE:add_toggle("Vehicle locked",
+    function() return VehLocked end,
+    function(val)
+        VehLocked = val
+        local currentvehicle = nil
+	if localplayer:is_in_vehicle() then
+		currentvehicle = localplayer:get_current_vehicle()
+        currentvehicle:set_door_lock_state(VehLocked)
+	end
+end)
+local VehDriftTires = false
+VEHICLESPAGE:add_toggle("Vehicle drift tires",
+    function() return VehDriftTires end,
+    function(val)
+        VehDriftTires = val
+        local currentvehicle = nil
+	if localplayer:is_in_vehicle() then
+		currentvehicle = localplayer:get_current_vehicle()
+        currentvehicle:set_drift_tyres_enabled(VehDriftTires)
+	end
+end)
+local VehWindowtint = 0
+VEHICLESPAGE:add_int_range("Window tint", 1, 0, 5, function()
+    return VehWindowtint
+end, function(val)
+    VehWindowtint = val
+    local currentvehicle = nil
+	if localplayer:is_in_vehicle() then
+		currentvehicle = localplayer:get_current_vehicle()
+        currentvehicle:set_window_tint(VehWindowtint)
+	end
+end)
+
+local Vehdirt = 0
+VEHICLESPAGE:add_int_range("Dirt level", 1, 0, 5, function()
+    return Vehdirt
+end, function(val)
+    Vehdirt = val
+    local currentvehicle = nil
+	if localplayer:is_in_vehicle() then
+		currentvehicle = localplayer:get_current_vehicle()
+        currentvehicle:set_dirt_level(Vehdirt)
 	end
 end)
 local InstaBrake = false
