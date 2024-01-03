@@ -32,5 +32,3 @@ Note: THIS USED TO BE FEMBOYLAX, Renamed to animus
 - Added Launch player feature
 - Fixed Kill vehicle
 - Optimized backend functions
-
-Feel free to adjust the formatting and styling as needed for your GitHub README. This structure makes it easy to read and understand the changes made in each category.
